@@ -1,11 +1,13 @@
 from typing import TypedDict
 from langgraph.graph import StateGraph, START, END
 from llm import LLM
+from sandbox_runner import run_code
 
 class AgentState(TypedDict):
     task: str
     plan: str
     code: str
+    test_cases: list[str]
     test_result: str
     review: str
     attempts: int
@@ -20,7 +22,12 @@ def planner(state: AgentState):
 2. Decide what needs to be implemented
 3. Write the required code
 4. Test the implementation
-"""
+""",
+        "test_cases": [
+            "For a calculator, add(5, 3) should return 8.",
+            "For a calculator, add(10, 20) should return 30.",
+            "For a calculator, add(-5, 2) should return -3."
+        ]
     }
 
 
@@ -57,23 +64,54 @@ Generate the required code.
 
 def tester(state: AgentState):
     code = state["code"]
+    test_cases = state["test_cases"]
 
-    if "print(" in code:
-        result = "PASS: The generated code contains a print statement."
-    else:
-        result = "FAIL: No print statement found."
+    result = run_code(code)
+
+    if result["return_code"] != 0:
+        return {
+            "test_result": (
+                "FAIL: Code execution failed.\n"
+                f"Error:\n{result['error']}"
+            )
+        }
+
+    output = result["output"].strip()
+
+    if "calculator" in state["task"].lower():
+        expected_outputs = ["8", "30", "-3"]
+
+        for expected in expected_outputs:
+            if expected not in output:
+                return {
+                    "test_result": (
+                        "FAIL: Calculator test case failed.\n"
+                        f"Expected result: {expected}\n"
+                        f"Actual output:\n{output}"
+                    )
+                }
+
+        return {
+            "test_result": (
+                "PASS: Calculator code executed and "
+                "all expected results were found.\n"
+                f"Output:\n{output}"
+            )
+        }
 
     return {
-        "test_result": result
+        "test_result": (
+            "PASS: Code executed successfully.\n"
+            f"Output:\n{output}"
+        )
     }
 def reviewer(state: AgentState):
-    code = state["code"]
     test_result = state["test_result"]
 
-    if "PASS" in test_result and "print(" in code:
-        review = "APPROVED: The code passed the test and looks acceptable."
+    if test_result.startswith("PASS"):
+        review = "APPROVED: The code passed the task-specific tests."
     else:
-        review = "REJECTED: The code needs improvement."
+        review = "REJECTED: The code failed the task-specific tests."
 
     return {
         "review": review
@@ -113,9 +151,10 @@ agent = graph.compile()
 
 
 result = agent.invoke({
-    "task": "Build a Python program that says hello",
+    "task": "Build a Python calculator",
     "plan": "",
     "code": "",
+    "test_cases": [],
     "test_result": "",
     "review": "",
     "attempts": 0
