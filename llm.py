@@ -1,16 +1,31 @@
 class LLM:
     def generate(self, prompt: str) -> str:
-        if "REJECTED" in prompt:
-            return 'print("Corrected solution generated after review")'
 
+        # Calculator task
         if "calculator" in prompt.lower():
+
+            # First attempt: intentionally wrong
+            if "REJECTED" not in prompt:
+                return """
+def add(a, b):
+    return a - b
+
+print(add(5, 3))
+print(add(10, 20))
+print(add(-5, 2))
+"""
+
+            # Second attempt: corrected after review
             return """
 def add(a, b):
     return a + b
 
 print(add(5, 3))
+print(add(10, 20))
+print(add(-5, 2))
 """
 
+        # Prime number task
         if "prime" in prompt.lower():
             return """
 def is_prime(number):
@@ -25,5 +40,13 @@ def is_prime(number):
 
 print(is_prime(7))
 """
+
+        # Hello task
+        if "hello" in prompt.lower():
+            return 'print("Hello from the AI Software Engineering Agent")'
+
+        # Generic correction
+        if "REJECTED" in prompt:
+            return 'print("Corrected solution generated after review")'
 
         return 'print("Hello from the AI Software Engineering Agent")'
