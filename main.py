@@ -17,6 +17,7 @@ def run_agent(task: str):
         "task": task,
         "plan": "",
         "code": "",
+        "test_cases": [],
         "test_result": "",
         "review": "",
         "attempts": 0

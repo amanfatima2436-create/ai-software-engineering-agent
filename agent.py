@@ -7,7 +7,7 @@ class AgentState(TypedDict):
     task: str
     plan: str
     code: str
-    test_cases: list[str]
+    test_cases: list[dict]
     test_result: str
     review: str
     attempts: int
@@ -24,13 +24,23 @@ def planner(state: AgentState):
 4. Test the implementation
 """,
         "test_cases": [
-            "For a calculator, add(5, 3) should return 8.",
-            "For a calculator, add(10, 20) should return 30.",
-            "For a calculator, add(-5, 2) should return -3."
+            {
+                "function": "add",
+                "inputs": [5, 3],
+                "expected": 8
+            },
+            {
+                "function": "add",
+                "inputs": [10, 20],
+                "expected": 30
+            },
+            {
+                "function": "add",
+                "inputs": [-5, 2],
+                "expected": -3
+            }
         ]
     }
-
-
 def coder(state: AgentState):
     task = state["task"]
     plan = state["plan"]
@@ -78,30 +88,23 @@ def tester(state: AgentState):
 
     output = result["output"].strip()
 
-    if "calculator" in state["task"].lower():
-        expected_outputs = ["8", "30", "-3"]
+    for test_case in test_cases:
+        expected = str(test_case["expected"])
 
-        for expected in expected_outputs:
-            if expected not in output:
-                return {
-                    "test_result": (
-                        "FAIL: Calculator test case failed.\n"
-                        f"Expected result: {expected}\n"
-                        f"Actual output:\n{output}"
-                    )
-                }
-
-        return {
-            "test_result": (
-                "PASS: Calculator code executed and "
-                "all expected results were found.\n"
-                f"Output:\n{output}"
-            )
-        }
+        if expected not in output:
+            return {
+                "test_result": (
+                    "FAIL: Test case failed.\n"
+                    f"Function: {test_case['function']}\n"
+                    f"Inputs: {test_case['inputs']}\n"
+                    f"Expected: {expected}\n"
+                    f"Actual output:\n{output}"
+                )
+            }
 
     return {
         "test_result": (
-            "PASS: Code executed successfully.\n"
+            "PASS: All generated test cases passed.\n"
             f"Output:\n{output}"
         )
     }
