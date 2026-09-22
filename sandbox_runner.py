@@ -3,14 +3,17 @@ import tempfile
 import os
 
 
-def run_code(code: str):
+def run_code(code: str, test_code: str = ""):
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
 
             code_file = os.path.join(temp_dir, "main.py")
+            test_file = os.path.join(temp_dir, "test.py")
 
             with open(code_file, "w") as file:
                 file.write(code)
+            with open(test_file, "w") as file:
+                file.write(test_code)
 
             result = subprocess.run(
                 [
@@ -21,7 +24,7 @@ def run_code(code: str):
                     "--memory", "256m",
                     "-v", f"{temp_dir}:/app:ro",
                     "python:3.12-slim",
-                    "python", "/app/main.py"
+                    "python", "/app/test.py"
                 ],
                 capture_output=True,
                 text=True,

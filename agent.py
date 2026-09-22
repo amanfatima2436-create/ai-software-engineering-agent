@@ -76,31 +76,27 @@ def tester(state: AgentState):
     code = state["code"]
     test_cases = state["test_cases"]
 
-    result = run_code(code)
+    test_code = "from main import add\n\n"
+
+    for test_case in test_cases:
+        inputs = ", ".join(str(value) for value in test_case["inputs"])
+        expected = test_case["expected"]
+
+        test_code += f"assert add({inputs}) == {expected}\n"
+
+    test_code += '\nprint("All tests passed")'
+
+    result = run_code(code, test_code)
 
     if result["return_code"] != 0:
         return {
             "test_result": (
-                "FAIL: Code execution failed.\n"
+                "FAIL: Test cases failed.\n"
                 f"Error:\n{result['error']}"
             )
         }
 
     output = result["output"].strip()
-
-    for test_case in test_cases:
-        expected = str(test_case["expected"])
-
-        if expected not in output:
-            return {
-                "test_result": (
-                    "FAIL: Test case failed.\n"
-                    f"Function: {test_case['function']}\n"
-                    f"Inputs: {test_case['inputs']}\n"
-                    f"Expected: {expected}\n"
-                    f"Actual output:\n{output}"
-                )
-            }
 
     return {
         "test_result": (
