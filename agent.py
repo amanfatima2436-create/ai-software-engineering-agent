@@ -76,13 +76,17 @@ def tester(state: AgentState):
     code = state["code"]
     test_cases = state["test_cases"]
 
-    test_code = "from main import add\n\n"
+    functions = {test_case["function"] for test_case in test_cases}
+    imports = ", ".join(sorted(functions))
+
+    test_code = f"from main import {imports}\n\n"
 
     for test_case in test_cases:
+        function = test_case["function"]
         inputs = ", ".join(str(value) for value in test_case["inputs"])
-        expected = test_case["expected"]
+        expected = repr(test_case["expected"])
 
-        test_code += f"assert add({inputs}) == {expected}\n"
+        test_code += f"assert {function}({inputs}) == {expected}\n"
 
     test_code += '\nprint("All tests passed")'
 
